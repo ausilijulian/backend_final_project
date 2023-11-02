@@ -13,5 +13,4 @@ import api.routes.client
 import api.routes.users
 import api.routes.receipt
 import api.routes.product_service
-import api.routes.receipt_detail
 import api.routes.users

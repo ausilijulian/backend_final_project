@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS client (
     email VARCHAR(255) NOT NULL,
     dni VARCHAR(20) NOT NULL,
     id_user INT,
+    deleted BOOLEAN DEFAULT 1,
     FOREIGN KEY (id_user) REFERENCES users(id)
 );
 
@@ -31,6 +32,7 @@ CREATE TABLE IF NOT EXISTS product_service (
     img VARCHAR(255),
     type VARCHAR(10) NOT NULL,
     id_user INT,
+    deleted BOOLEAN DEFAULT 1,
     FOREIGN KEY (id_user) REFERENCES users(id)
 );
 
@@ -41,6 +43,7 @@ CREATE TABLE IF NOT EXISTS receipt (
     code VARCHAR(255) NOT NULL,
     id_client INT,
     id_user INT,
+    deleted BOOLEAN DEFAULT 1,
     FOREIGN KEY (id_client) REFERENCES client(id),
     FOREIGN KEY (id_user) REFERENCES users(id)
 );
@@ -53,7 +56,7 @@ CREATE TABLE IF NOT EXISTS receipt_detail (
     quantity INT,
     unit_price DECIMAL(10, 2),
     FOREIGN KEY (id_receipt) REFERENCES receipt(id),
-    FOREIGN KEY (id_product_service) REFERENCES product_service(id)
+    FOREIGN KEY (id_product_service) REFERENCES product_service(id),
 );
 
 

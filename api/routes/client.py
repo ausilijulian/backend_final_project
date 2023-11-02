@@ -12,7 +12,7 @@ from api.db.db import mysql
 def get_client_by_id(id_user,id_client):
     #acceso a BD SELECT --- WHERE
     cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM client WHERE id = %s', (id_client,)) 
+    cur.execute('SELECT * FROM client WHERE id = %s AND deleted = 1', (id_client,)) 
     data = cur.fetchall()
     if cur.rowcount>0:
         objClient = Client(data[0])
@@ -25,7 +25,7 @@ def get_client_by_id(id_user,id_client):
 @user_resources
 def get_all_clients_by_user_id(id_user):
     cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM client WHERE id_user = {0}'.format(id_user))
+    cur.execute('SELECT * FROM client WHERE id_user = {0} AND deleted = 1'.format(id_user))
     data = cur.fetchall()
     clientList = []
     for row in data:
@@ -48,7 +48,7 @@ def create_client(id_user):
     cur = mysql.connection.cursor()
 
     #control si existe el email 
-    cur.execute('SELECT * FROM client WHERE email = %s', (email,)) #la coma dsps de email es para que
+    cur.execute('SELECT * FROM client WHERE email = %s AND id_user = %s', (email, id_user)) #la coma dsps de email es para que
     row = cur.fetchone()                                           # tome como tupla
 
     if row: #si no hay nada da null
@@ -78,7 +78,7 @@ def update_client(id_client,id_user):
     #control si existe el email PERO no del recurso que se edita
     #(esto permite editar otros campos de client sin se que se bloquee el UPDATE porque el cliente ya tiene su email registrado)
 
-    cur.execute('SELECT * FROM client WHERE email = %s AND id != %s', (email, id_client))
+    cur.execute('SELECT * FROM client WHERE email = %s AND id != %s AND id_user = %s', (email, id_client, id_user))
     row = cur.fetchone()                                          
 
     if row: #si no hay nada da null
@@ -99,6 +99,6 @@ def update_client(id_client,id_user):
 def remove_client(id_client,id_user):
     #acceso a BD SELECT --- DELETE FROM WHERE
     cur = mysql.connection.cursor()
-    cur.execute('DELETE FROM client WHERE id = %s', (id_client,)) 
+    cur.execute('UPDATE client SET deleted = 0 WHERE id = %s', (id_client,)) 
     mysql.connection.commit()
     return jsonify({"message": "deleted", "id": id_client})

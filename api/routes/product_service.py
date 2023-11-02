@@ -12,7 +12,7 @@ from api.db.db import mysql
 def get_product_service_by_id(id_user,id_product_service):
     #acceso a BD SELECT --- WHERE
     cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM product_service WHERE id = %s', (id_product_service,)) 
+    cur.execute('SELECT * FROM product_service WHERE id = %s AND deleted = 1', (id_product_service,)) 
     data = cur.fetchall()
     if cur.rowcount>0:
         objClient = Product_Service(data[0])
@@ -25,7 +25,7 @@ def get_product_service_by_id(id_user,id_product_service):
 @user_resources
 def get_all_product_service_by_user_id(id_user):
     cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM product_service WHERE id_user = {0}'.format(id_user))
+    cur.execute('SELECT * FROM product_service WHERE id_user = {0} AND deleted = 1'.format(id_user))
     data = cur.fetchall()
     clientList = []
     print(data)
@@ -52,7 +52,7 @@ def create_product_service(id_user):
     cur = mysql.connection.cursor()
 
     #control si existe el name
-    cur.execute('SELECT * FROM product_service WHERE name = %s', (name,)) 
+    cur.execute('SELECT * FROM product_service WHERE name = %s AND id_user = %s', (name, id_user)) 
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null
@@ -83,7 +83,7 @@ def update_product_service(id_product_service, id_user):
      #control si existe el name PERO no del del recurso que edita
     #(esto permite editar campos de product_service sin que se bloque el UPDATE porque el producto ya tiene su name registrado)
 
-    cur.execute('SELECT * FROM product_service WHERE name = %s AND id != %s', (name, id_product_service))
+    cur.execute('SELECT * FROM product_service WHERE name = %s AND id != %s AND id_user = %s', (name, id_product_service, id_user))
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null
@@ -104,6 +104,6 @@ def update_product_service(id_product_service, id_user):
 def remove_product_service(id_product_service,id_user):
     #acceso a BD SELECT --- DELETE FROM WHERE
     cur = mysql.connection.cursor()
-    cur.execute('DELETE FROM product_service WHERE id = %s', (id_product_service,)) 
+    cur.execute('UPDATE product_service SET deleted = 0 WHERE id = %s', (id_product_service,)) 
     mysql.connection.commit()
     return jsonify({"message": "deleted", "id": id_product_service})
