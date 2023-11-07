@@ -14,10 +14,10 @@ class Receipt:
         if detail_rows:
             for row in detail_rows:
                 cur = mysql.connection.cursor()
-                cur.execute('SELECT name FROM product_service WHERE id = %s', (row[1],))
+                cur.execute('SELECT name FROM product_service WHERE id = %s', (row[2],))
                 name_product = cur.fetchone()
                 detail = {
-                    "id_product_service": row[1],
+                    "id_product_service": row[2],
                     "name": name_product[0],
                     "quantity": row[3],
                     "unit_price": row[4]

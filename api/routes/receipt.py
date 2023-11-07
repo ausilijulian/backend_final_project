@@ -55,11 +55,19 @@ def create_receipt(id_user):
     receipt_detail = request.get_json()["receipt_detail"] #debe contener campo"
                                                           #name, y quantity
 
+    
+    cur = mysql.connection.cursor()
+
+    #Ver si existe el cliente
+    cur.execute('SELECT * FROM client WHERE id = %s AND deleted = 1 AND id_user = %s', (id_client, id_user))
+    if cur.rowcount == 0:
+        return jsonify({"message": f"Cliente no encontrado"}), 404
+
     #CHEQUEAMOS SI HAY STOCK Y SI EXISTEN LOS PRODUCTOS
     for product in receipt_detail:
         print(product)
-        cur = mysql.connection.cursor()
-        cur.execute('SELECT stock FROM product_service WHERE name = %s AND deleted = 1', (product['name'],))
+        # cur = mysql.connection.cursor()
+        cur.execute('SELECT stock FROM product_service WHERE name = %s AND deleted = 1 AND id_user = %s', (product['name'], id_user))
         if cur.rowcount>0:
             stock_product = cur.fetchone()[0]
             if (product['quantity'] > stock_product):
@@ -68,7 +76,7 @@ def create_receipt(id_user):
             return jsonify({"message": f"Product {product['name']} not found"}), 404
 
     #INSERTAMOS LOS CAMPOS EN LAS COLUMNAS DE FACTURA
-    cur = mysql.connection.cursor()
+    # cur = mysql.connection.cursor()
     #acceso a BD INSERT INTO
     cur.execute ('INSERT INTO receipt (date, code, id_client, id_user) VALUES (%s, %s, %s, %s)', (date, code, id_client, id_user))
     mysql.connection.commit()

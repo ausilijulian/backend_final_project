@@ -51,6 +51,8 @@ def create_product_service(id_user):
 
     cur = mysql.connection.cursor()
 
+    cur.execute('SELECT * FROM product_service WHERE name = %s AND id_user = %s', (name, id_user)) 
+
     #control si existe el name
     cur.execute('SELECT * FROM product_service WHERE name = %s AND id_user = %s', (name, id_user)) 
     row = cur.fetchone()                                           
@@ -83,7 +85,7 @@ def update_product_service(id_product_service, id_user):
      #control si existe el name PERO no del del recurso que edita
     #(esto permite editar campos de product_service sin que se bloque el UPDATE porque el producto ya tiene su name registrado)
 
-    cur.execute('SELECT * FROM product_service WHERE name = %s AND id != %s AND id_user = %s', (name, id_product_service, id_user))
+    cur.execute('SELECT * FROM product_service WHERE name = %s AND id != %s AND id_user = %s ', (name, id_product_service, id_user))
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null
@@ -91,7 +93,7 @@ def update_product_service(id_product_service, id_user):
 
 
     #acceso a BD SELECT --- UPDATE SET -- WHERE
-    cur.execute('UPDATE product_service SET name = %s, stock = %s, price = %s, description = %s, img = %s, type = %s  WHERE id = %s', (name, stock, price, description, img, type, id_product_service))
+    cur.execute('UPDATE product_service SET name = %s, stock = %s, price = %s, description = %s, img = %s, type = %s  WHERE id = %s ', (name, stock, price, description, img, type, id_product_service))
     mysql.connection.commit() #guardado
     return jsonify({"id": id_product_service , "name": name, "stock": stock, "description": description, "img": img, "type": type})
 

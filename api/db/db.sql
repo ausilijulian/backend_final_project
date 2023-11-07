@@ -1,11 +1,10 @@
-
-CREATE DATABASE IF NOT EXISTS db_final_project;
-USE db_final_project;
+CREATE DATABASE IF NOT EXISTS db_final_project2;
+USE db_final_project2;
 
 -- Crear la tabla Usuario
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+    username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL
 );
@@ -56,7 +55,5 @@ CREATE TABLE IF NOT EXISTS receipt_detail (
     quantity INT,
     unit_price DECIMAL(10, 2),
     FOREIGN KEY (id_receipt) REFERENCES receipt(id),
-    FOREIGN KEY (id_product_service) REFERENCES product_service(id),
+    FOREIGN KEY (id_product_service) REFERENCES product_service(id)
 );
-
-
