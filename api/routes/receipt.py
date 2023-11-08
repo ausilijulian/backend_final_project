@@ -48,9 +48,23 @@ def get_all_receipt_by_user_id(id_user):
 @token_required
 @user_resources
 def create_receipt(id_user):
+    # date = request.get_json()["date"]
+    # code = request.get_json()["code"] #recuperamos los datos del json con la libreria request y la funcion
+    # id_client = request.get_json()["id_client"] #get_json
+    # id_user = id_user
+    # receipt_detail = request.get_json()["receipt_detail"] #debe contener campo"
+    #                                                       #name, y quantity
+
+    
+    # cur = mysql.connection.cursor()
+
+    # #Ver si existe el cliente
+    # cur.execute('SELECT * FROM client WHERE id = %s AND deleted = 1 AND id_user = %s', (id_client, id_user))
+    # if cur.rowcount == 0:
+    #     return jsonify({"message": f"Cliente no encontrado"}), 404
     date = request.get_json()["date"]
     code = request.get_json()["code"] #recuperamos los datos del json con la libreria request y la funcion
-    id_client = request.get_json()["id_client"] #get_json
+    dni_client = request.get_json()["dni_client"] #get_json
     id_user = id_user
     receipt_detail = request.get_json()["receipt_detail"] #debe contener campo"
                                                           #name, y quantity
@@ -59,9 +73,10 @@ def create_receipt(id_user):
     cur = mysql.connection.cursor()
 
     #Ver si existe el cliente
-    cur.execute('SELECT * FROM client WHERE id = %s AND deleted = 1 AND id_user = %s', (id_client, id_user))
+    cur.execute('SELECT * FROM client WHERE dni = %s AND deleted = 1 AND id_user = %s', (dni_client, id_user))
     if cur.rowcount == 0:
         return jsonify({"message": f"Cliente no encontrado"}), 404
+    id_client = cur.fetchone()[0]
 
 
     sum_by_name = {}
@@ -81,7 +96,7 @@ def create_receipt(id_user):
         else:
             # Si no existe, crear una nueva entrada en el diccionario
             sum_by_name[name] = quantity
-
+    print(sum_by_name)
     # Crear un nuevo elemento de detalle unificado para cada nombre
     for name, total_quantity in sum_by_name.items():
         new_item = {
@@ -89,13 +104,13 @@ def create_receipt(id_user):
             "quantity": total_quantity
         }
         new_details.append(new_item)
-
+    print(new_details)
     # Sobrescribir details con los datos unificados
     receipt_detail = new_details
 
     #CHEQUEAMOS SI HAY STOCK Y SI EXISTEN LOS PRODUCTOS
     for product in receipt_detail:
-        print(product)
+        
         # cur = mysql.connection.cursor()
         cur.execute('SELECT stock FROM product_service WHERE name = %s AND deleted = 1 AND id_user = %s', (product['name'], id_user))
         if cur.rowcount>0:

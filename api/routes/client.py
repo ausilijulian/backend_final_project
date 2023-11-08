@@ -53,6 +53,13 @@ def create_client(id_user):
 
     if row: #si no hay nada da null
         return jsonify({"message": "email ya registrado"})
+    
+    #control si existe el dni
+    cur.execute('SELECT * FROM client WHERE dni = %s AND id_user = %s', (dni, id_user)) 
+    row = cur.fetchone()                                           
+
+    if row: #si no hay nada da null
+        return jsonify({"message": "dni ya registrado"})
 
     #acceso a BD INSERT INTO
     cur.execute ('INSERT INTO client (name, surname, email, dni, id_user) VALUES (%s, %s, %s, %s, %s)', (name, surname, email, dni, id_user))
@@ -84,6 +91,11 @@ def update_client(id_client,id_user):
     if row: #si no hay nada da null
         return jsonify({"message": "email ya registrado"})
 
+    cur.execute('SELECT * FROM client WHERE dni = %s AND id != %s AND id_user = %s', (dni, id_client, id_user))
+    row = cur.fetchone()                                          
+
+    if row: #si no hay nada da null
+        return jsonify({"message": "dni ya registrado"})
 
     #acceso a BD SELECT --- UPDATE SET -- WHERE
     cur.execute('UPDATE client SET name = %s, surname = %s, email = %s, dni = %s WHERE id = %s', (name, surname, email, dni, id_client))
