@@ -51,10 +51,9 @@ def create_product_service(id_user):
 
     cur = mysql.connection.cursor()
 
-    cur.execute('SELECT * FROM product_service WHERE name = %s AND id_user = %s', (name, id_user)) 
 
     #control si existe el name
-    cur.execute('SELECT * FROM product_service WHERE name = %s AND id_user = %s', (name, id_user)) 
+    cur.execute('SELECT * FROM product_service WHERE name = %s AND id_user = %s AND deleted = 1 ', (name, id_user)) 
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null
@@ -85,7 +84,7 @@ def update_product_service(id_product_service, id_user):
      #control si existe el name PERO no del del recurso que edita
     #(esto permite editar campos de product_service sin que se bloque el UPDATE porque el producto ya tiene su name registrado)
 
-    cur.execute('SELECT * FROM product_service WHERE name = %s AND id != %s AND id_user = %s ', (name, id_product_service, id_user))
+    cur.execute('SELECT * FROM product_service WHERE name = %s AND id != %s AND id_user = %s AND deleted = 1 ', (name, id_product_service, id_user))
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null

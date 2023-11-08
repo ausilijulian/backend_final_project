@@ -48,14 +48,14 @@ def create_client(id_user):
     cur = mysql.connection.cursor()
 
     #control si existe el email 
-    cur.execute('SELECT * FROM client WHERE email = %s AND id_user = %s', (email, id_user)) #la coma dsps de email es para que
+    cur.execute('SELECT * FROM client WHERE email = %s AND id_user = %s AND deleted = 1', (email, id_user)) #la coma dsps de email es para que
     row = cur.fetchone()                                           # tome como tupla
 
     if row: #si no hay nada da null
         return jsonify({"message": "email ya registrado"})
     
     #control si existe el dni
-    cur.execute('SELECT * FROM client WHERE dni = %s AND id_user = %s', (dni, id_user)) 
+    cur.execute('SELECT * FROM client WHERE dni = %s AND id_user = %s AND deleted = 1', (dni, id_user)) 
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null
@@ -85,13 +85,13 @@ def update_client(id_client,id_user):
     #control si existe el email PERO no del recurso que se edita
     #(esto permite editar otros campos de client sin se que se bloquee el UPDATE porque el cliente ya tiene su email registrado)
 
-    cur.execute('SELECT * FROM client WHERE email = %s AND id != %s AND id_user = %s', (email, id_client, id_user))
+    cur.execute('SELECT * FROM client WHERE email = %s AND id != %s AND id_user = %s AND deleted = 1', (email, id_client, id_user))
     row = cur.fetchone()                                          
 
     if row: #si no hay nada da null
         return jsonify({"message": "email ya registrado"})
 
-    cur.execute('SELECT * FROM client WHERE dni = %s AND id != %s AND id_user = %s', (dni, id_client, id_user))
+    cur.execute('SELECT * FROM client WHERE dni = %s AND id != %s AND id_user = %s AND deleted = 1', (dni, id_client, id_user))
     row = cur.fetchone()                                          
 
     if row: #si no hay nada da null
