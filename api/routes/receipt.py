@@ -63,6 +63,36 @@ def create_receipt(id_user):
     if cur.rowcount == 0:
         return jsonify({"message": f"Cliente no encontrado"}), 404
 
+
+    sum_by_name = {}
+
+# Crear una nueva lista para almacenar los datos unificados
+    new_details = []
+
+    # Procesar los detalles y actualizar la lista new_details
+    for item in receipt_detail:
+        name = item['name']
+        quantity = item['quantity']
+
+        # Comprobar si el nombre ya está en el diccionario
+        if name in sum_by_name:
+            # Si ya existe, sumar la cantidad
+            sum_by_name[name] += quantity
+        else:
+            # Si no existe, crear una nueva entrada en el diccionario
+            sum_by_name[name] = quantity
+
+    # Crear un nuevo elemento de detalle unificado para cada nombre
+    for name, total_quantity in sum_by_name.items():
+        new_item = {
+            "name": name,
+            "quantity": total_quantity
+        }
+        new_details.append(new_item)
+
+    # Sobrescribir details con los datos unificados
+    receipt_detail = new_details
+
     #CHEQUEAMOS SI HAY STOCK Y SI EXISTEN LOS PRODUCTOS
     for product in receipt_detail:
         print(product)
