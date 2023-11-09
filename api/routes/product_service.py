@@ -42,13 +42,17 @@ def get_all_product_service_by_user_id(id_user):
 @user_resources
 def create_product_service(id_user):
     name = request.get_json()["name"]
-    stock = request.get_json()["stock"] #recuperamos los datos del json con la libreria request y la funcion
-    price = request.get_json()["price"] #get_json
+    # stock = request.get_json()["stock"] 
+    price = request.get_json()["price"] 
     description= request.get_json()["description"]
     img = request.get_json()["img"]
     type = request.get_json()["type"]
     id_user = id_user
 
+    if type == "Producto": 
+        stock = request.get_json()["stock"]
+    else:   #la tabla stock en caso de ser un Servicio se le asignara 1 (revisar!)
+        stock = 1
     cur = mysql.connection.cursor()
 
 

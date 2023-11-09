@@ -99,11 +99,14 @@ def create_receipt(id_user):
         
         # cur = mysql.connection.cursor()
         cur.execute('SELECT stock FROM product_service WHERE name = %s AND deleted = 1 AND id_user = %s ', (product['name'], id_user))
-        if cur.rowcount>0:
-            stock_product = cur.fetchone()[0]
-            if (product['quantity'] > stock_product):
-                return jsonify({"message": f"Product {product['name']} insufficient stock"}), 404
-        else:
+        if cur.rowcount>0: #Chequea si la consulta devolvio alguna fila
+            stock_product = cur.fetchone()[0] 
+            cur.execute('SELECT type FROM product_service WHERE name = %s AND deleted = 1 AND id_user = %s ', (product['name'], id_user))
+            type_product = cur.fetchone()[0] 
+            if type_product == "Producto": #si el type es producto nos fijamos que la quantity no supere el stock.
+                if (product['quantity'] > stock_product):
+                    return jsonify({"message": f"Product {product['name']} insufficient stock"}), 404
+        else: 
             return jsonify({"message": f"Product {product['name']} not found"}), 404
 
     #INSERTAMOS LOS CAMPOS EN LAS COLUMNAS DE FACTURA
@@ -117,9 +120,8 @@ def create_receipt(id_user):
     details=[]
     for product in receipt_detail:
         #seleccionamos el ID del nombre de la factura que viene del front
-        cur.execute('SELECT id FROM product_service WHERE name = %s AND deleted = 1', (product['name'],))
+        cur.execute('SELECT id FROM product_service WHERE name = %s AND deleted = 1 AND id_user = %s ', (product['name'], id_user))
         id_product_service = cur.fetchone()[0] 
-        id_receipt = id_receipt
         quantity = product['quantity']
         #seleccionamos el precio del producto segun su id
         cur.execute('SELECT price FROM product_service WHERE id = %s ', (id_product_service,))
@@ -133,7 +135,7 @@ def create_receipt(id_user):
                     "quantity": product['quantity'],
                     "unit_price": unit_price
                 }
-        #restamos la quantity al stock
+        #restamos la quantity al stock en caso de ser producto
         cur.execute('UPDATE product_service SET stock = stock - %s WHERE id = %s AND type = "Producto"', (quantity, id_product_service))
         mysql.connection.commit() #guardado
         details.append(detail)
@@ -197,5 +199,5 @@ def get_product_ranking(id_user):
     service_ranking = {k: v for k, v in sorted(service_ranking.items(), key=lambda item: item[1], reverse=True)}
 
     # Crear un objeto JSON que contiene ambos rankings
-    ranking = {"productos": product_ranking, "servicios": service_ranking}
+    ranking = {"products": product_ranking, "services": service_ranking}
     return jsonify(ranking)
