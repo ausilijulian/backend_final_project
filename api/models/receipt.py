@@ -16,9 +16,12 @@ class Receipt:
                 cur = mysql.connection.cursor()
                 cur.execute('SELECT name FROM product_service WHERE id = %s', (row[2],))
                 name_product = cur.fetchone()
+                cur.execute('SELECT type FROM product_service WHERE id = %s', (row[2],))
+                type_product = cur.fetchone()
                 detail = {
                     "id_product_service": row[2],
                     "name": name_product[0],
+                    "type": type_product[0],
                     "quantity": row[3],
                     "unit_price": row[4]
                 }

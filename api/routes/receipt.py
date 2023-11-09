@@ -48,20 +48,6 @@ def get_all_receipt_by_user_id(id_user):
 @token_required
 @user_resources
 def create_receipt(id_user):
-    # date = request.get_json()["date"]
-    # code = request.get_json()["code"] #recuperamos los datos del json con la libreria request y la funcion
-    # id_client = request.get_json()["id_client"] #get_json
-    # id_user = id_user
-    # receipt_detail = request.get_json()["receipt_detail"] #debe contener campo"
-    #                                                       #name, y quantity
-
-    
-    # cur = mysql.connection.cursor()
-
-    # #Ver si existe el cliente
-    # cur.execute('SELECT * FROM client WHERE id = %s AND deleted = 1 AND id_user = %s', (id_client, id_user))
-    # if cur.rowcount == 0:
-    #     return jsonify({"message": f"Cliente no encontrado"}), 404
     date = request.get_json()["date"]
     code = request.get_json()["code"] #recuperamos los datos del json con la libreria request y la funcion
     dni_client = request.get_json()["dni_client"] #get_json
@@ -112,7 +98,7 @@ def create_receipt(id_user):
     for product in receipt_detail:
         
         # cur = mysql.connection.cursor()
-        cur.execute('SELECT stock FROM product_service WHERE name = %s AND deleted = 1 AND id_user = %s', (product['name'], id_user))
+        cur.execute('SELECT stock FROM product_service WHERE name = %s AND deleted = 1 AND id_user = %s ', (product['name'], id_user))
         if cur.rowcount>0:
             stock_product = cur.fetchone()[0]
             if (product['quantity'] > stock_product):
@@ -131,12 +117,12 @@ def create_receipt(id_user):
     details=[]
     for product in receipt_detail:
         #seleccionamos el ID del nombre de la factura que viene del front
-        cur.execute('SELECT id FROM product_service WHERE name = %s ', (product['name'],))
+        cur.execute('SELECT id FROM product_service WHERE name = %s AND deleted = 1', (product['name'],))
         id_product_service = cur.fetchone()[0] 
         id_receipt = id_receipt
         quantity = product['quantity']
-        #seleccionamos el precio del producto segun su nombre
-        cur.execute('SELECT price FROM product_service WHERE name = %s ', (product['name'],))
+        #seleccionamos el precio del producto segun su id
+        cur.execute('SELECT price FROM product_service WHERE id = %s ', (id_product_service,))
         unit_price = cur.fetchone()[0] 
         #Insertamos el producto en la factura_detalle
         cur.execute ('INSERT INTO receipt_detail (id_receipt, id_product_service, quantity, unit_price) VALUES (%s, %s, %s, %s)', (id_receipt, id_product_service, quantity, unit_price))
@@ -148,20 +134,68 @@ def create_receipt(id_user):
                     "unit_price": unit_price
                 }
         #restamos la quantity al stock
-        cur.execute('UPDATE product_service SET stock = stock - %s WHERE id = %s', (quantity, id_product_service))
+        cur.execute('UPDATE product_service SET stock = stock - %s WHERE id = %s AND type = "Producto"', (quantity, id_product_service))
         mysql.connection.commit() #guardado
         details.append(detail)
     return jsonify({"code":code, "date": date, "details": details, "id": id_receipt, "id_client": id_client, "id_user": id_user})
 
 
-#REMOVE 
-@app.route('/user/<int:id_user>/receipt/<int:id_receipt>', methods = ['DELETE'])
+# #REMOVE 
+# @app.route('/user/<int:id_user>/receipt/<int:id_receipt>', methods = ['DELETE'])
+# @token_required
+# @user_resources
+# @receipt_resource
+# def remove_receipt(id_receipt,id_user):
+#     #acceso a BD SELECT --- DELETE FROM WHERE
+#     cur = mysql.connection.cursor()
+#     cur.execute('UPDATE receipt SET deleted = 0 WHERE id = %s', (id_receipt,)) 
+#     mysql.connection.commit()
+#     return jsonify({"message": "deleted", "id": id_receipt})
+
+
+# Ruta para obtener un ranking de productos por cantidad
+@app.route('/user/<int:id_user>/receiptRanking', methods=['GET'])
 @token_required
 @user_resources
-@receipt_resource
-def remove_receipt(id_receipt,id_user):
-    #acceso a BD SELECT --- DELETE FROM WHERE
+def get_product_ranking(id_user):
     cur = mysql.connection.cursor()
-    cur.execute('UPDATE receipt SET deleted = 0 WHERE id = %s', (id_receipt,)) 
-    mysql.connection.commit()
-    return jsonify({"message": "deleted", "id": id_receipt})
+    cur.execute('SELECT * FROM receipt WHERE id_user = {0} '.format(id_user))
+    dataReceipt = cur.fetchall()
+    receiptList = []
+    for row in dataReceipt:
+
+        id_receipt = row[0]
+        cur.execute('SELECT * FROM receipt_detail WHERE id_receipt = %s', (id_receipt,)) 
+        dataReceipt_detail = cur.fetchall()
+        objClient = Receipt(row,dataReceipt_detail)
+        receiptList.append(objClient.to_json())
+    # Crear diccionarios para los rankings de Producto y Servicio
+    product_ranking = {}
+    service_ranking = {}
+
+    # Recorrer la lista de objetos
+    for item in receiptList:
+        details = item.get("details", [])
+        for detail in details:
+            name = detail.get("name")
+            quantity = detail.get("quantity")
+            type = detail.get("type")
+
+            if type == "Producto":
+                if name in product_ranking:
+                    product_ranking[name] += quantity
+                else:
+                    product_ranking[name] = quantity
+            elif type == "Servicio":
+                if name in service_ranking:
+                    service_ranking[name] += quantity
+                else:
+                    service_ranking[name] = quantity
+
+    # Ordenar los rankings por cantidad descendente
+    product_ranking = {k: v for k, v in sorted(product_ranking.items(), key=lambda item: item[1], reverse=True)}
+    service_ranking = {k: v for k, v in sorted(service_ranking.items(), key=lambda item: item[1], reverse=True)}
+
+    # Crear un objeto JSON que contiene ambos rankings
+    ranking = {"productos": product_ranking, "servicios": service_ranking}
+    return jsonify(ranking)
