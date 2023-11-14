@@ -75,6 +75,19 @@ def create_receipt(id_user):
     # Verificar si 'receipt_detail' es una lista
     if 'receipt_detail' in request_data and not isinstance(request_data['receipt_detail'], list):
         return jsonify({"message": "Invalid data type for receipt_detail, expected list"}), 400
+    
+    for item in request_data['receipt_detail']:
+        # Verificar si el objeto es un diccionario
+        if not isinstance(item, dict):
+            return jsonify({"message": "Each item in receipt_detail should be a dictionary"}), 400
+
+        # Verificar la presencia de 'name' y 'quantity' en el objeto
+        if 'name' not in item or 'quantity' not in item:
+            return jsonify({"message": "Each item in receipt_detail should have 'name' and 'quantity'"}), 400
+
+        # Verificar que 'name' sea una cadena y 'quantity' sea un entero
+        if not (isinstance(item['name'], str) and isinstance(item['quantity'], int)):
+            return jsonify({"message": "Invalid data types for 'name' or 'quantity' in receipt_detail"}), 400   
 
     date = request.get_json()["date"]
     code = request.get_json()["code"] #recuperamos los datos del json con la libreria request y la funcion
