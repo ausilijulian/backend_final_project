@@ -3,7 +3,14 @@ from api.models.receipt import Receipt
 from api.utils import token_required, user_resources, receipt_resource
 from flask import jsonify, request
 from api.db.db import mysql
+from datetime import datetime
 
+def is_valid_date(date_str, date_format="%Y-%m-%d"):
+    try:
+        datetime.strptime(date_str, date_format)
+        return True
+    except ValueError:
+        return False
 
 
 #GET FACTURA BY ID
@@ -48,6 +55,27 @@ def get_all_receipt_by_user_id(id_user):
 @token_required
 @user_resources
 def create_receipt(id_user):
+
+
+    request_data = request.get_json()
+
+    # Verificar la existencia de todas las claves requeridas
+    required_keys = ['date', 'code', 'dni_client', 'receipt_detail']
+    if not all(key in request_data for key in required_keys):
+        return jsonify({"message": "Missing required keys"}), 400
+    
+    # Verificar si 'date' es una cadena y sigue el formato de fecha esperado
+    if 'date' in request_data and not (isinstance(request_data['date'], str) and is_valid_date(request_data['date'])):
+        return jsonify({"message": "Invalid data type or format for date"}), 400
+
+    # Verificar si 'code' y 'dni_client' son cadenas (str)
+    if not all(isinstance(request_data[key], str) for key in ['code', 'dni_client']):
+        return jsonify({"message": "Invalid data types for code or dni_client"}), 400
+
+    # Verificar si 'receipt_detail' es una lista
+    if 'receipt_detail' in request_data and not isinstance(request_data['receipt_detail'], list):
+        return jsonify({"message": "Invalid data type for receipt_detail, expected list"}), 400
+
     date = request.get_json()["date"]
     code = request.get_json()["code"] #recuperamos los datos del json con la libreria request y la funcion
     dni_client = request.get_json()["dni_client"] #get_json
@@ -135,7 +163,7 @@ def create_receipt(id_user):
                     "quantity": product['quantity'],
                     "unit_price": unit_price
                 }
-        #restamos la quantity al stock en caso de ser producto
+        #restamos la quantity al stock en en caso de ser producto
         cur.execute('UPDATE product_service SET stock = stock - %s WHERE id = %s AND type = "Producto"', (quantity, id_product_service))
         mysql.connection.commit() #guardado
         details.append(detail)

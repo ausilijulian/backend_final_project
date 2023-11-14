@@ -39,6 +39,18 @@ def get_all_clients_by_user_id(id_user):
 @token_required
 @user_resources
 def create_client(id_user):
+
+    request_data = request.get_json()
+
+    # Verificar la existencia de todas las claves requeridas
+    required_keys = ['name', 'surname', 'email', 'dni']
+    if not all(key in request_data for key in required_keys):
+        return jsonify({"message": "Missing required keys"}), 400
+    
+    if not all(isinstance(request_data[key], str) for key in ['name', 'surname', 'email', 'dni']):
+        return jsonify({"message": "Invalid data types for name, description, img, or type"}), 400
+
+
     name = request.get_json()["name"] #recuperamos los datos del json con la libreria request y la funcion
     surname = request.get_json()["surname"] #get_json
     email = request.get_json()["email"]

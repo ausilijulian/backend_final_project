@@ -41,6 +41,21 @@ def get_all_product_service_by_user_id(id_user):
 @token_required
 @user_resources
 def create_product_service(id_user):
+    request_data = request.get_json()
+
+    # Verificar la existencia de todas las claves requeridas
+    required_keys = ['name', 'description', 'img', 'type', 'price','stock']
+    if not all(key in request_data for key in required_keys):
+        return jsonify({"message": "Missing required keys"}), 400
+    
+    if not all(isinstance(request_data[key], str) for key in ['name', 'description', 'img', 'type']):
+        return jsonify({"message": "Invalid data types for name, description, img, or type"}), 400
+
+    for key in ['price', 'stock']:
+        if key in request_data and not isinstance(request_data[key], (int, float)):
+            return jsonify({"message": f"Invalid data type for {key}"}), 400
+
+
     name = request.get_json()["name"]
     # stock = request.get_json()["stock"] 
     price = request.get_json()["price"] 
