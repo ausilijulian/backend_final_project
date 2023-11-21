@@ -46,28 +46,42 @@ def create_product_service(id_user):
     # Verificar la existencia de todas las claves requeridas
     required_keys = ['name', 'description', 'img', 'type', 'price','stock']
     if not all(key in request_data for key in required_keys):
-        return jsonify({"message": "Missing required keys"}), 400
+        return jsonify({"error": "Missing required keys"}), 400
     
     if not all(isinstance(request_data[key], str) for key in ['name', 'description', 'img', 'type']):
-        return jsonify({"message": "Invalid data types for name, description, img, or type"}), 400
+        return jsonify({"error": "Invalid data types for name, description, img, or type"}), 400
 
-    for key in ['price', 'stock']:
-        if key in request_data and not isinstance(request_data[key], (int, float)):
-            return jsonify({"message": f"Invalid data type for {key}"}), 400
+    type = request.get_json()["type"]
 
+    if type == "Producto": 
+        for key in ['price', 'stock']:
+            if key in request_data and not isinstance(request_data[key], (int, float)):
+                return jsonify({"error": f"Invalid data type for {key}"}), 400
+    else:
+        for key in ['price']:
+            if key in request_data and not isinstance(request_data[key], (float,int)):
+                return jsonify({"error": f"Invalid data type for {key}"}), 400
+            
 
     name = request.get_json()["name"]
     # stock = request.get_json()["stock"] 
     price = request.get_json()["price"] 
     description= request.get_json()["description"]
     img = request.get_json()["img"]
-    type = request.get_json()["type"]
+    
     id_user = id_user
 
     if type == "Producto": 
         stock = request.get_json()["stock"]
     else:   #la tabla stock en caso de ser un Servicio se le asignara 1 (revisar!)
         stock = 1
+
+
+
+
+
+
+        
     cur = mysql.connection.cursor()
 
 
@@ -76,7 +90,7 @@ def create_product_service(id_user):
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null
-        return jsonify({"message": "nombre ya registrado"})
+        return jsonify({"error": "nombre ya registrado"}),400
 
     #acceso a BD INSERT INTO
     cur.execute ('INSERT INTO product_service (name, stock, price, description, img, type, id_user) VALUES (%s, %s, %s, %s, %s, %s, %s)', (name, stock, price, description, img, type, id_user))
@@ -92,6 +106,22 @@ def create_product_service(id_user):
 @user_resources
 @product_service_resource
 def update_product_service(id_product_service, id_user):
+
+    request_data = request.get_json()
+
+    # Verificar la existencia de todas las claves requeridas
+    required_keys = ['name', 'description', 'img', 'type', 'price','stock']
+    if not all(key in request_data for key in required_keys):
+        return jsonify({"error": "Missing required keys"}), 400
+    
+    if not all(isinstance(request_data[key], str) for key in ['name', 'description', 'img', 'type']):
+        return jsonify({"error": "Invalid data types for name, description, img, or type"}), 400
+
+    for key in ['price', 'stock']:
+        if key in request_data and not isinstance(request_data[key], (int, float)):
+            return jsonify({"error": f"Invalid data type for {key}"}), 400
+        
+        
     name = request.get_json()["name"]
     stock = request.get_json()["stock"] #recuperamos los datos del json con la libreria request y la funcion
     price = request.get_json()["price"] #get_json
@@ -107,7 +137,7 @@ def update_product_service(id_product_service, id_user):
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null
-        return jsonify({"message": "nombre ya registrado"})
+        return jsonify({"error": "nombre ya registrado"}),400
 
 
     #acceso a BD SELECT --- UPDATE SET -- WHERE

@@ -62,32 +62,32 @@ def create_receipt(id_user):
     # Verificar la existencia de todas las claves requeridas
     required_keys = ['date', 'code', 'dni_client', 'receipt_detail']
     if not all(key in request_data for key in required_keys):
-        return jsonify({"message": "Missing required keys"}), 400
+        return jsonify({"error": "Missing required keys"}), 400
     
     # Verificar si 'date' es una cadena y sigue el formato de fecha esperado
     if 'date' in request_data and not (isinstance(request_data['date'], str) and is_valid_date(request_data['date'])):
-        return jsonify({"message": "Invalid data type or format for date"}), 400
+        return jsonify({"error": "Invalid data type or format for date"}), 400
 
     # Verificar si 'code' y 'dni_client' son cadenas (str)
     if not all(isinstance(request_data[key], str) for key in ['code', 'dni_client']):
-        return jsonify({"message": "Invalid data types for code or dni_client"}), 400
+        return jsonify({"error": "Invalid data types for code or dni_client"}), 400
 
     # Verificar si 'receipt_detail' es una lista
     if 'receipt_detail' in request_data and not isinstance(request_data['receipt_detail'], list):
-        return jsonify({"message": "Invalid data type for receipt_detail, expected list"}), 400
+        return jsonify({"error": "Invalid data type for receipt_detail, expected list"}), 400
     
     for item in request_data['receipt_detail']:
         # Verificar si el objeto es un diccionario
         if not isinstance(item, dict):
-            return jsonify({"message": "Each item in receipt_detail should be a dictionary"}), 400
+            return jsonify({"error": "Each item in receipt_detail should be a dictionary"}), 400
 
         # Verificar la presencia de 'name' y 'quantity' en el objeto
         if 'name' not in item or 'quantity' not in item:
-            return jsonify({"message": "Each item in receipt_detail should have 'name' and 'quantity'"}), 400
+            return jsonify({"error": "Each item in receipt_detail should have 'name' and 'quantity'"}), 400
 
         # Verificar que 'name' sea una cadena y 'quantity' sea un entero
         if not (isinstance(item['name'], str) and isinstance(item['quantity'], int)):
-            return jsonify({"message": "Invalid data types for 'name' or 'quantity' in receipt_detail"}), 400   
+            return jsonify({"error": "Invalid data types for 'name' or 'quantity' in receipt_detail"}), 400   
 
     date = request.get_json()["date"]
     code = request.get_json()["code"] #recuperamos los datos del json con la libreria request y la funcion
@@ -102,7 +102,7 @@ def create_receipt(id_user):
     #Ver si existe el cliente
     cur.execute('SELECT * FROM client WHERE dni = %s AND deleted = 1 AND id_user = %s', (dni_client, id_user))
     if cur.rowcount == 0:
-        return jsonify({"message": f"Cliente no encontrado"}), 404
+        return jsonify({"error": f"Cliente no encontrado"}), 404
     id_client = cur.fetchone()[0]
 
 
@@ -146,9 +146,9 @@ def create_receipt(id_user):
             type_product = cur.fetchone()[0] 
             if type_product == "Producto": #si el type es producto nos fijamos que la quantity no supere el stock.
                 if (product['quantity'] > stock_product):
-                    return jsonify({"message": f"Product {product['name']} insufficient stock"}), 404
+                    return jsonify({"error": f"Product {product['name']} insufficient stock"}), 404
         else: 
-            return jsonify({"message": f"Product {product['name']} not found"}), 404
+            return jsonify({"error": f"Product {product['name']} not found"}), 404
 
     #INSERTAMOS LOS CAMPOS EN LAS COLUMNAS DE FACTURA
     # cur = mysql.connection.cursor()

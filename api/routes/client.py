@@ -45,10 +45,10 @@ def create_client(id_user):
     # Verificar la existencia de todas las claves requeridas
     required_keys = ['name', 'surname', 'email', 'dni']
     if not all(key in request_data for key in required_keys):
-        return jsonify({"message": "Missing required keys"}), 400
+        return jsonify({"error": "Missing required keys"}), 400
     
     if not all(isinstance(request_data[key], str) for key in ['name', 'surname', 'email', 'dni']):
-        return jsonify({"message": "Invalid data types for name, description, img, or type"}), 400
+        return jsonify({"error": "Invalid data types for name, description, img, or type"}), 400
 
 
     name = request.get_json()["name"] #recuperamos los datos del json con la libreria request y la funcion
@@ -64,14 +64,14 @@ def create_client(id_user):
     row = cur.fetchone()                                           # tome como tupla
 
     if row: #si no hay nada da null
-        return jsonify({"message": "email ya registrado"})
+        return jsonify({"error": "email ya registrado"}),400
     
     #control si existe el dni
     cur.execute('SELECT * FROM client WHERE dni = %s AND id_user = %s AND deleted = 1', (dni, id_user)) 
     row = cur.fetchone()                                           
 
     if row: #si no hay nada da null
-        return jsonify({"message": "dni ya registrado"})
+        return jsonify({"error": "dni ya registrado"}),400
 
     #acceso a BD INSERT INTO
     cur.execute ('INSERT INTO client (name, surname, email, dni, id_user) VALUES (%s, %s, %s, %s, %s)', (name, surname, email, dni, id_user))
@@ -87,6 +87,17 @@ def create_client(id_user):
 @user_resources
 @client_resource
 def update_client(id_client,id_user):
+
+    request_data = request.get_json()
+
+    # Verificar la existencia de todas las claves requeridas
+    required_keys = ['name', 'surname', 'email', 'dni']
+    if not all(key in request_data for key in required_keys):
+        return jsonify({"error": "Missing required keys"}), 400
+    
+    if not all(isinstance(request_data[key], str) for key in ['name', 'surname', 'email', 'dni']):
+        return jsonify({"error": "Invalid data types for name, description, img, or type"}), 400
+
     name=request.get_json()["name"] #recuperamos los datos del json con la libreria request y la funcion
     surname=request.get_json()["surname"] #get_json
     email = request.get_json()["email"]
@@ -101,13 +112,13 @@ def update_client(id_client,id_user):
     row = cur.fetchone()                                          
 
     if row: #si no hay nada da null
-        return jsonify({"message": "email ya registrado"})
+        return jsonify({"error": "email ya registrado"}),400
 
     cur.execute('SELECT * FROM client WHERE dni = %s AND id != %s AND id_user = %s AND deleted = 1', (dni, id_client, id_user))
     row = cur.fetchone()                                          
 
     if row: #si no hay nada da null
-        return jsonify({"message": "dni ya registrado"})
+        return jsonify({"error": "dni ya registrado"}),400
 
     #acceso a BD SELECT --- UPDATE SET -- WHERE
     cur.execute('UPDATE client SET name = %s, surname = %s, email = %s, dni = %s WHERE id = %s', (name, surname, email, dni, id_client))
