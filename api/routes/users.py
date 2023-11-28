@@ -22,6 +22,6 @@ def login():
         return jsonify({"message": "Login Incorrecto"}),401
     
     token = jwt.encode({'id':row[0],
-                        'exp':datetime.datetime.utcnow() + datetime.timedelta(minutes=60)}, app.config['SECRET_KEY'])
+                        'exp':datetime.datetime.utcnow() + datetime.timedelta(minutes=100)}, app.config['SECRET_KEY'])
     
     return jsonify({"token": token, "username": auth.username, "id":row[0]})

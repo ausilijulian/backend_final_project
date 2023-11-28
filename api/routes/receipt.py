@@ -27,7 +27,7 @@ def get_receipt_by_id(id_user,id_receipt):
         cur.execute('SELECT * FROM receipt_detail WHERE id_receipt = %s', (id_receipt,)) 
         dataReceipt_detail = cur.fetchall()
         objReceipt = Receipt(dataReceipt[0],dataReceipt_detail)
-        return jsonify (objReceipt.to_json())
+        return jsonify (objReceipt.to_json()),200
     return jsonify({"message": "id not found"}),404
 
 #GET TODAS LAS FACTURAS
@@ -47,7 +47,7 @@ def get_all_receipt_by_user_id(id_user):
         objClient = Receipt(row,dataReceipt_detail)
         receiptList.append(objClient.to_json())
 
-    return jsonify(receiptList)
+    return jsonify(receiptList),200
 
 
 #POST FACTURA
@@ -55,8 +55,6 @@ def get_all_receipt_by_user_id(id_user):
 @token_required
 @user_resources
 def create_receipt(id_user):
-
-
     request_data = request.get_json()
 
     # Verificar la existencia de todas las claves requeridas
@@ -90,8 +88,8 @@ def create_receipt(id_user):
             return jsonify({"error": "Invalid data types for 'name' or 'quantity' in receipt_detail"}), 400   
 
     date = request.get_json()["date"]
-    code = request.get_json()["code"] #recuperamos los datos del json con la libreria request y la funcion
-    dni_client = request.get_json()["dni_client"] #get_json
+    code = request.get_json()["code"] 
+    dni_client = request.get_json()["dni_client"] 
     id_user = id_user
     receipt_detail = request.get_json()["receipt_detail"] #debe contener campo"
                                                           #name, y quantity
@@ -105,6 +103,10 @@ def create_receipt(id_user):
         return jsonify({"error": f"Cliente no encontrado"}), 404
     id_client = cur.fetchone()[0]
 
+    cur.execute('SELECT name FROM client WHERE id = %s AND id_user = %s', (id_client, id_user))
+    name_client = cur.fetchone()[0]
+    cur.execute('SELECT surname FROM client WHERE id = %s AND id_user = %s', (id_client, id_user))
+    surname_client = cur.fetchone()[0]
 
     sum_by_name = {}
 
@@ -151,7 +153,6 @@ def create_receipt(id_user):
             return jsonify({"error": f"Product {product['name']} not found"}), 404
 
     #INSERTAMOS LOS CAMPOS EN LAS COLUMNAS DE FACTURA
-    # cur = mysql.connection.cursor()
     #acceso a BD INSERT INTO
     cur.execute ('INSERT INTO receipt (date, code, id_client, id_user) VALUES (%s, %s, %s, %s)', (date, code, id_client, id_user))
     mysql.connection.commit()
@@ -160,7 +161,6 @@ def create_receipt(id_user):
 
     details=[]
     for product in receipt_detail:
-        #seleccionamos el ID del nombre de la factura que viene del front
         cur.execute('SELECT id FROM product_service WHERE name = %s AND deleted = 1 AND id_user = %s ', (product['name'], id_user))
         id_product_service = cur.fetchone()[0] 
         quantity = product['quantity']
@@ -180,7 +180,7 @@ def create_receipt(id_user):
         cur.execute('UPDATE product_service SET stock = stock - %s WHERE id = %s AND type = "Producto"', (quantity, id_product_service))
         mysql.connection.commit() #guardado
         details.append(detail)
-    return jsonify({"code":code, "date": date, "details": details, "id": id_receipt, "id_client": id_client, "id_user": id_user})
+    return jsonify({"code":code, "date": date, "details": details, "id": id_receipt, "id_client": id_client, "id_user": id_user, "name_client": name_client,"surname_client": surname_client}),201
 
 
 # #REMOVE 
@@ -197,7 +197,7 @@ def create_receipt(id_user):
 
 
 # Ruta para obtener un ranking de productos por cantidad
-@app.route('/user/<int:id_user>/receiptRanking', methods=['GET'])
+@app.route('/user/<int:id_user>/receiptProductRanking', methods=['GET'])
 @token_required
 @user_resources
 def get_product_ranking(id_user):
@@ -241,4 +241,35 @@ def get_product_ranking(id_user):
 
     # Crear un objeto JSON que contiene ambos rankings
     ranking = {"products": product_ranking, "services": service_ranking}
-    return jsonify(ranking)
+    return jsonify(ranking),200
+
+# Ruta para obtener un ranking de Clientes por Venta
+@app.route('/user/<int:id_user>/receiptClientRanking', methods=['GET'])
+@token_required
+@user_resources
+def get_client_ranking(id_user):
+    cur = mysql.connection.cursor()
+
+    # Consulta para contar la cantidad de facturas por cliente en la tabla receipt
+    cur.execute('''
+        SELECT c.dni, c.name, c.surname, COUNT(r.id) as total_receipts
+        FROM receipt r
+        JOIN client c ON r.id_client = c.id
+        WHERE r.id_user = %s
+        GROUP BY c.dni, c.name, c.surname
+        ORDER BY total_receipts DESC
+    ''', (id_user,))
+
+    # Obtén los resultados de la consulta
+    ranking = cur.fetchall()
+
+    cur.close()
+
+    # Transforma el resultado en una lista de objetos JSON
+    result = [
+        {"dni": str(row[0]), "name": row[1], "surname": row[2], "total_receipts": row[3]}
+        for row in ranking
+    ]
+
+    # Devuelve el resultado en formato JSON
+    return jsonify(result),200

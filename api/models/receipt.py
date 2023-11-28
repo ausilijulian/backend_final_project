@@ -10,10 +10,16 @@ class Receipt:
         self._id_user = receipt_row[4]
 
         self._details = []  # Inicialmente, no hay detalles
+        cur = mysql.connection.cursor()
+        cur.execute('SELECT name FROM client WHERE id = %s AND id_user = %s', (self._id_client, self._id_user))
+        self._name_client = cur.fetchone()[0]
+        cur.execute('SELECT surname FROM client WHERE id = %s AND id_user = %s', (self._id_client,  self._id_user))
+        self._surname_client = cur.fetchone()[0]
+
 
         if detail_rows:
             for row in detail_rows:
-                cur = mysql.connection.cursor()
+                
                 cur.execute('SELECT name FROM product_service WHERE id = %s', (row[2],))
                 name_product = cur.fetchone()
                 cur.execute('SELECT type FROM product_service WHERE id = %s', (row[2],))
@@ -34,7 +40,10 @@ class Receipt:
             "code": self._code,
             "id_client": self._id_client,
             "id_user": self._id_user,
-            "details": self._details
+            "details": self._details,
+            "name_client": self._name_client,
+            "surname_client": self._surname_client
+            
         }
 
         return receipt_data
